@@ -1,0 +1,27 @@
+body {
+  font-family: "Helvetica Neue", sans-serif;
+  background-color: #fffaf7;
+  color: #453431;
+  padding: 2em;
+}
+
+h1 {
+  color: #190e12;
+}
+
+input, textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  margin-bottom: 1em;
+}
+
+button {
+  background-color: #7a6768;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
