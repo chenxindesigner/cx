@@ -1,12 +1,12 @@
-// 初始化 LIFF
-liff.init({ liffId: "2007730669-BZpPW38q" })
+// 初始化 LIFF，請確認這是你目前使用的正確 LIFF ID
+liff.init({ liffId: "2007736327-ZO83VAmo" })
   .then(() => {
     if (!liff.isLoggedIn()) {
       liff.login();
     }
   })
   .catch((err) => {
-    alert("LIFF 初始化失敗：" + err);
+    alert("❌ LIFF 初始化失敗：" + err);
   });
 
 // 分享 Flex 卡片功能
@@ -15,7 +15,7 @@ function sendFlex() {
   const altText = document.getElementById("altTextInput").value || "這是一則 Flex 卡片";
 
   if (!json) {
-    alert("請貼上 Flex JSON");
+    alert("⚠️ 請貼上 Flex JSON");
     return;
   }
 
@@ -29,7 +29,7 @@ function sendFlex() {
     };
 
     if (!liff.isApiAvailable("shareTargetPicker")) {
-      alert("目前裝置不支援分享功能，請改用手機");
+      alert("⚠️ 目前裝置不支援分享功能，請改用手機");
       return;
     }
 
