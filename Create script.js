@@ -1,6 +1,18 @@
+// 初始化 LIFF
+liff.init({ liffId: "2007730669-BZpPW38q" })
+  .then(() => {
+    if (!liff.isLoggedIn()) {
+      liff.login();
+    }
+  })
+  .catch((err) => {
+    alert("LIFF 初始化失敗：" + err);
+  });
+
+// 分享 Flex 卡片功能
 function sendFlex() {
   const json = document.getElementById("jsonInput").value;
-  const altText = document.getElementById("altTextInput").value || "Flex卡片預覽";
+  const altText = document.getElementById("altTextInput").value || "這是一則 Flex 卡片";
 
   if (!json) {
     alert("請貼上 Flex JSON");
@@ -8,17 +20,21 @@ function sendFlex() {
   }
 
   try {
-    const flex = JSON.parse(json);
+    const parsed = JSON.parse(json);
+
     const message = {
       type: "flex",
       altText: altText,
-      contents: flex.contents || flex
+      contents: parsed
     };
 
-    const encoded = encodeURIComponent(JSON.stringify(message, null, 0));
-    const url = `https://line.me/R/msg/text/?${encoded}`;
-    window.open(url, "_blank");
+    if (!liff.isApiAvailable("shareTargetPicker")) {
+      alert("目前裝置不支援分享功能，請改用手機");
+      return;
+    }
+
+    liff.shareTargetPicker([message]);
   } catch (e) {
-    alert("JSON 格式錯誤，請確認內容正確！");
+    alert("❌ JSON 格式錯誤，請重新檢查\n\n" + e.message);
   }
 }
