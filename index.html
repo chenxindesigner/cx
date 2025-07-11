@@ -1,19 +1,210 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ChenXin Flex 分享工具</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="utf-8" />
+  <title>Flex 一鍵分享卡片工具</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
 </head>
 <body>
-  <div class="container">
-    <h1>ChenXin Flex 分享工具</h1>
-    <textarea id="jsonInput" placeholder="請貼上完整 Flex JSON..." spellcheck="false"></textarea>
-    <input type="text" id="altTextInput" placeholder="輸入 altText（預設：Flex 卡片）" />
-    <button onclick="sendFlex()">➠ 分享給 LINE 好友</button>
-    <p class="hint">✅ 支援 LINE Flex Simulator 貼上格式</p>
-  </div>
-  <script src="script.js"></script>
+  <h2>Flex JSON 輸入區</h2>
+  <textarea id="flexJsonInput" style="width:90%; height:400px;">
+{
+  "type": "bubble",
+  "hero": {
+    "type": "image",
+    "url": "https://developers-resource.landpress.line.me/fx/img/01_1_cafe.png",
+    "size": "full",
+    "aspectRatio": "20:13",
+    "aspectMode": "cover",
+    "action": {
+      "type": "uri",
+      "uri": "https://line.me/"
+    }
+  },
+  "body": {
+    "type": "box",
+    "layout": "vertical",
+    "contents": [
+      {
+        "type": "text",
+        "text": "Brown Cafe",
+        "weight": "bold",
+        "size": "xl"
+      },
+      {
+        "type": "box",
+        "layout": "baseline",
+        "margin": "md",
+        "contents": [
+          {
+            "type": "icon",
+            "size": "sm",
+            "url": "https://developers-resource.landpress.line.me/fx/img/review_gold_star_28.png"
+          },
+          {
+            "type": "icon",
+            "size": "sm",
+            "url": "https://developers-resource.landpress.line.me/fx/img/review_gold_star_28.png"
+          },
+          {
+            "type": "icon",
+            "size": "sm",
+            "url": "https://developers-resource.landpress.line.me/fx/img/review_gold_star_28.png"
+          },
+          {
+            "type": "icon",
+            "size": "sm",
+            "url": "https://developers-resource.landpress.line.me/fx/img/review_gold_star_28.png"
+          },
+          {
+            "type": "icon",
+            "size": "sm",
+            "url": "https://developers-resource.landpress.line.me/fx/img/review_gray_star_28.png"
+          },
+          {
+            "type": "text",
+            "text": "4.0",
+            "size": "sm",
+            "color": "#999999",
+            "margin": "md",
+            "flex": 0
+          }
+        ]
+      },
+      {
+        "type": "box",
+        "layout": "vertical",
+        "margin": "lg",
+        "spacing": "sm",
+        "contents": [
+          {
+            "type": "box",
+            "layout": "baseline",
+            "spacing": "sm",
+            "contents": [
+              {
+                "type": "text",
+                "text": "Place",
+                "color": "#aaaaaa",
+                "size": "sm",
+                "flex": 1
+              },
+              {
+                "type": "text",
+                "text": "Flex Tower, 7-7-4 Midori-ku, Tokyo",
+                "wrap": true,
+                "color": "#666666",
+                "size": "sm",
+                "flex": 5
+              }
+            ]
+          },
+          {
+            "type": "box",
+            "layout": "baseline",
+            "spacing": "sm",
+            "contents": [
+              {
+                "type": "text",
+                "text": "Time",
+                "color": "#aaaaaa",
+                "size": "sm",
+                "flex": 1
+              },
+              {
+                "type": "text",
+                "text": "10:00 - 23:00",
+                "wrap": true,
+                "color": "#666666",
+                "size": "sm",
+                "flex": 5
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "footer": {
+    "type": "box",
+    "layout": "vertical",
+    "spacing": "sm",
+    "contents": [
+      {
+        "type": "button",
+        "style": "link",
+        "height": "sm",
+        "action": {
+          "type": "uri",
+          "label": "CALL",
+          "uri": "https://line.me/"
+        }
+      },
+      {
+        "type": "button",
+        "style": "link",
+        "height": "sm",
+        "action": {
+          "type": "uri",
+          "label": "WEBSITE",
+          "uri": "https://line.me/"
+        }
+      },
+      {
+        "type": "box",
+        "layout": "vertical",
+        "contents": [],
+        "margin": "sm"
+      }
+    ],
+    "flex": 0
+  }
+}
+  </textarea>
+  <br><br>
+  <button onclick="shareFlexMessage()">📤 分享給好友</button>
+
+  <script>
+    liff.init({ liffId: '2007730669-BZpPW38q' })
+      .then(() => {
+        if (!liff.isLoggedIn()) {
+          liff.login();
+        }
+      })
+      .catch((err) => {
+        console.error('LIFF 初始化失敗:', err);
+        alert('LIFF 初始化失敗，請確認 LIFF ID 是否正確');
+      });
+
+    async function shareFlexMessage() {
+      const jsonText = document.getElementById("flexJsonInput").value;
+      let json;
+      try {
+        json = JSON.parse(jsonText);
+      } catch (e) {
+        alert("❌ JSON 格式錯誤，請確認內容");
+        return;
+      }
+
+      if (!liff.isApiAvailable('shareTargetPicker')) {
+        alert("目前裝置不支援分享功能");
+        return;
+      }
+
+      try {
+        await liff.shareTargetPicker([
+          {
+            type: "flex",
+            altText: json.body?.contents?.[0]?.text || "這是一則 Flex 訊息",
+            contents: json
+          }
+        ]);
+      } catch (e) {
+        console.error("❌ 分享失敗：", e);
+        alert("Flex 分享失敗，請再次確認格式");
+      }
+    }
+  </script>
 </body>
 </html>
