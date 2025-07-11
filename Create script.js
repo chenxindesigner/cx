@@ -1,18 +1,8 @@
-// 初始化 LIFF，請確認這是你目前使用的正確 LIFF ID
-liff.init({ liffId: "2007736327-ZO83VAmo" })
-  .then(() => {
-    if (!liff.isLoggedIn()) {
-      liff.login();
-    }
-  })
-  .catch((err) => {
-    alert("❌ LIFF 初始化失敗：" + err);
-  });
-
-// 分享 Flex 卡片功能
 function sendFlex() {
   const json = document.getElementById("jsonInput").value;
   const altText = document.getElementById("altTextInput").value || "這是一則 Flex 卡片";
+
+  alert("⚙️ 已經點擊按鈕");
 
   if (!json) {
     alert("⚠️ 請貼上 Flex JSON");
@@ -28,10 +18,14 @@ function sendFlex() {
       contents: parsed
     };
 
+    alert("🧪 解析成功，準備檢查分享支援");
+
     if (!liff.isApiAvailable("shareTargetPicker")) {
       alert("⚠️ 目前裝置不支援分享功能，請改用手機");
       return;
     }
+
+    alert("✅ 支援分享功能，準備開啟 Picker");
 
     liff.shareTargetPicker([message]);
   } catch (e) {
