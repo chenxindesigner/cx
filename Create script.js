@@ -1,15 +1,22 @@
-function generateUrl() {
-  const altText = document.getElementById("alt").value;
-  const json = document.getElementById("json").value;
+function sendFlex() {
+  const jsonText = document.getElementById("jsonInput").value.trim();
+  const altText = document.getElementById("altTextInput").value.trim() || "Flex 卡片";
 
-  const encoded = encodeURIComponent(
-    JSON.stringify({
+  if (!jsonText) {
+    alert("請先貼上 Flex JSON！");
+    return;
+  }
+
+  try {
+    const payload = JSON.parse(jsonText);
+    const finalPayload = {
       type: "flex",
-      altText: altText || "Flex訊息",
-      contents: JSON.parse(json)
-    })
-  );
-
-  const liffUrl = `https://liff.line.me/1645278921-kWRPP32q/?type=flex&data=${encoded}`;
-  window.open(liffUrl, "_blank");
+      altText: altText,
+      contents: payload.contents
+    };
+    const shareUrl = `https://line.me/R/msg/text/?${encodeURIComponent(JSON.stringify(finalPayload))}`;
+    window.open(shareUrl, "_blank");
+  } catch (e) {
+    alert("JSON 格式錯誤，請檢查！");
+  }
 }
