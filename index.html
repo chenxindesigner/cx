@@ -5,20 +5,83 @@
   <title>Flex 卡片分享器</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
-  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      font-family: "Helvetica Neue", sans-serif;
+      padding: 20px;
+      text-align: center;
+    }
+    textarea, input {
+      width: 90%;
+      padding: 10px;
+      margin: 10px 0;
+      font-size: 16px;
+    }
+    button {
+      background-color: #333;
+      color: white;
+      padding: 12px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+    }
+    .hint {
+      color: green;
+      margin-top: 12px;
+    }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <h2>請貼上 Flex JSON</h2>
-    <textarea id="jsonInput" placeholder="請貼上完整 Flex JSON"></textarea>
+  <h2>請貼上 Flex JSON</h2>
+  <textarea id="jsonInput" placeholder="請貼上完整 Flex JSON"></textarea>
+  <input id="altTextInput" placeholder="可自訂卡片標題（altText）" />
+  <button onclick="sendFlex()">📤 分享給 LINE 好友</button>
+  <div class="hint">記得貼上正確格式，才會成功出圖！</div>
 
-    <input id="altTextInput" placeholder="可自訂卡片標題（altText）" />
+  <script>
+    // 初始化 LIFF
+    liff.init({ liffId: "2007736327-ZO83VAmo" })
+      .then(() => {
+        if (!liff.isLoggedIn()) {
+          liff.login();
+        }
+      })
+      .catch((err) => {
+        alert("❌ LIFF 初始化失敗：" + err);
+      });
 
-    <button onclick="sendFlex()">📤 分享給 LINE 好友</button>
+    // 分享 Flex
+    function sendFlex() {
+      const json = document.getElementById("jsonInput").value;
+      const altText = document.getElementById("altTextInput").value || "這是一則 Flex 卡片";
 
-    <div class="hint">記得貼上正確格式，才會成功出圖！</div>
-  </div>
+      if (!json) {
+        alert("⚠️ 請貼上 Flex JSON");
+        return;
+      }
 
-  <script src="script.js"></script>
+      try {
+        const parsed = JSON.parse(json);
+
+        const message = {
+          type: "flex",
+          altText: altText,
+          contents: parsed
+        };
+
+        if (!liff.isApiAvailable("shareTargetPicker")) {
+          alert("⚠️ 裝置不支援分享功能，請用手機 LINE App 開啟");
+          return;
+        }
+
+        liff.shareTargetPicker([message]).catch((err) => {
+          alert("❌ 分享失敗：" + err.message);
+        });
+
+      } catch (e) {
+        alert("❌ JSON 格式錯誤，請重新檢查\n\n" + e.message);
+      }
+    }
+  </script>
 </body>
 </html>
