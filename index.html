@@ -5,7 +5,6 @@
   <title>Flex 卡片分享器</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
-  <link rel="stylesheet" href="style.css" />
   <style>
     body {
       font-family: sans-serif;
@@ -22,7 +21,7 @@
     }
     textarea {
       width: 100%;
-      height: 200px;
+      height: 250px;
       margin-bottom: 10px;
       font-size: 14px;
       padding: 10px;
@@ -56,11 +55,11 @@
 </head>
 <body>
   <div class="container">
-    <h2>請貼上 Flex JSON</h2>
-    <textarea id="jsonInput" placeholder="請貼上完整 Flex JSON"></textarea>
+    <h2>請貼上 Flex 或 Message JSON</h2>
+    <textarea id="jsonInput" placeholder='{"type":"text","text":"👋 嗨！這是訊息文字"}'></textarea>
     <input id="altTextInput" placeholder="可自訂卡片標題（altText）" />
-    <button onclick="sendFlex()">📤 分享給 LINE 好友</button>
-    <div class="hint">記得貼上正確格式，才會成功出圖！</div>
+    <button onclick="sendContent()">📤 分享給 LINE 好友</button>
+    <div class="hint">支援 Flex / Text 訊息，請貼上正確 JSON 格式</div>
   </div>
 
   <script>
@@ -75,23 +74,27 @@
         alert("❌ LIFF 初始化失敗：" + err);
       });
 
-    // 分享功能
-    function sendFlex() {
+    function sendContent() {
       const json = document.getElementById("jsonInput").value;
       const altText = document.getElementById("altTextInput").value || "這是一則 Flex 卡片";
 
       if (!json) {
-        alert("⚠️ 請貼上 Flex JSON");
+        alert("⚠️ 請貼上 Flex 或 Message JSON");
         return;
       }
 
       try {
         const parsed = JSON.parse(json);
-        const message = {
-          type: "flex",
-          altText: altText,
-          contents: parsed
-        };
+        let message = parsed;
+
+        // 若為 Flex，補 altText
+        if (parsed.type === "flex") {
+          message = {
+            type: "flex",
+            altText: altText,
+            contents: parsed.contents
+          };
+        }
 
         if (!liff.isApiAvailable("shareTargetPicker")) {
           alert("⚠️ 目前裝置不支援分享功能，請改用手機");
@@ -100,13 +103,11 @@
 
         liff.shareTargetPicker([message]).then(() => {
           alert("✅ 分享成功！");
-          // 自動清空欄位
           document.getElementById("jsonInput").value = "";
           document.getElementById("altTextInput").value = "";
         }).catch((err) => {
           alert("❌ 分享失敗：" + err);
         });
-
       } catch (e) {
         alert("❌ JSON 格式錯誤，請重新檢查\n\n" + e.message);
       }
