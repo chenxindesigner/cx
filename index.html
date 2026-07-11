@@ -1,117 +1,254 @@
-
 <!DOCTYPE html>
-<html>
+<html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  >
+
   <title>Flex 卡片分享器</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
-  <link rel="stylesheet" href="style.css" />
-  <style>
-    body {
-      font-family: sans-serif;
-      padding: 20px;
-      background-color: #f8f8f8;
-    }
-    .container {
-      max-width: 500px;
-      margin: auto;
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.05);
-    }
-    textarea {
-      width: 100%;
-      height: 200px;
-      margin-bottom: 10px;
-      font-size: 14px;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-    }
-    input {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 15px;
-      font-size: 14px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-    }
-    button {
-      width: 100%;
-      padding: 12px;
-      background-color: #06c755;
-      color: white;
-      font-size: 16px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    .hint {
-      margin-top: 10px;
-      color: #666;
-      font-size: 13px;
-    }
-  </style>
+
+  <script
+    charset="utf-8"
+    src="https://static.line-scdn.net/liff/edge/2/sdk.js"
+  ></script>
+
+  <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-  <div class="container">
+  <main class="container">
     <h2>請貼上 Flex JSON</h2>
-    <textarea id="jsonInput" placeholder="請貼上完整 Flex JSON"></textarea>
-    <input id="altTextInput" placeholder="可自訂卡片標題（altText）" />
-    <button onclick="sendFlex()">📤 分享給 LINE 好友</button>
-    <div class="hint">記得貼上正確格式，才會成功出圖！</div>
-  </div>
+
+    <textarea
+      id="jsonInput"
+      placeholder="請貼上完整 Flex JSON"
+      spellcheck="false"
+      autocomplete="off"
+    ></textarea>
+
+    <input
+      id="altTextInput"
+      type="text"
+      maxlength="400"
+      placeholder="可自訂卡片標題（altText）"
+      autocomplete="off"
+    >
+
+    <button id="shareButton" type="button" disabled>
+      📤 分享給 LINE 好友
+    </button>
+
+    <div
+      id="statusBox"
+      class="status info"
+      role="status"
+      aria-live="polite"
+    >
+      正在初始化 LINE 分享功能
+    </div>
+
+    <div class="hint">
+      可貼上 Bubble、Carousel 或完整 Flex Message JSON
+    </div>
+  </main>
 
   <script>
-    // 初始化 LIFF
-    liff.init({ liffId: "2007736327-ZO83VAmo" })
-      .then(() => {
-        if (!liff.isLoggedIn()) {
-          liff.login();
-        }
-      })
-      .catch((err) => {
-        alert("❌ LIFF 初始化失敗：" + err);
-      });
+    const LIFF_ID = "2007736327-ZO83VAmo";
 
-    // 分享功能
-    function sendFlex() {
-      const json = document.getElementById("jsonInput").value;
-      const altText = document.getElementById("altTextInput").value || "這是一則 Flex 卡片";
+    const jsonInput = document.getElementById("jsonInput");
+    const altTextInput = document.getElementById("altTextInput");
+    const shareButton = document.getElementById("shareButton");
+    const statusBox = document.getElementById("statusBox");
 
-      if (!json) {
-        alert("⚠️ 請貼上 Flex JSON");
-        return;
+    let liffReady = false;
+    let isSharing = false;
+
+    function setStatus(message, type = "info") {
+      statusBox.textContent = message;
+      statusBox.className = `status ${type}`;
+    }
+
+    function setButtonLoading(loading) {
+      isSharing = loading;
+      shareButton.disabled = loading || !liffReady;
+      shareButton.textContent = loading
+        ? "正在開啟分享名單…"
+        : "📤 分享給 LINE 好友";
+    }
+
+    function formatError(error) {
+      if (!error) {
+        return "發生未知錯誤";
       }
 
-      try {
-        const parsed = JSON.parse(json);
-        const message = {
-          type: "flex",
-          altText: altText,
-          contents: parsed
-        };
+      const code = error.code ? `${error.code}：` : "";
+      const message = error.message || String(error);
 
-        if (!liff.isApiAvailable("shareTargetPicker")) {
-          alert("⚠️ 目前裝置不支援分享功能，請改用手機");
+      return `${code}${message}`;
+    }
+
+    function buildFlexMessage(rawJson, customAltText) {
+      if (
+        !rawJson ||
+        typeof rawJson !== "object" ||
+        Array.isArray(rawJson)
+      ) {
+        throw new Error("Flex JSON 必須是完整物件");
+      }
+
+      let contents;
+      let altText = customAltText.trim();
+
+      // 支援完整 Flex Message 格式
+      if (rawJson.type === "flex" && rawJson.contents) {
+        contents = rawJson.contents;
+
+        if (!altText && typeof rawJson.altText === "string") {
+          altText = rawJson.altText.trim();
+        }
+      } else {
+        // 支援直接貼 Bubble 或 Carousel
+        contents = rawJson;
+      }
+
+      if (
+        !contents ||
+        (contents.type !== "bubble" &&
+          contents.type !== "carousel")
+      ) {
+        throw new Error(
+          "目前只支援 Bubble、Carousel 或完整 Flex Message"
+        );
+      }
+
+      if (
+        contents.type === "carousel" &&
+        (!Array.isArray(contents.contents) ||
+          contents.contents.length === 0)
+      ) {
+        throw new Error("Carousel 內沒有任何卡片");
+      }
+
+      if (!altText) {
+        altText = "這是一則 Flex 卡片";
+      }
+
+      if (altText.length > 400) {
+        throw new Error("卡片標題不可超過 400 個字");
+      }
+
+      return {
+        type: "flex",
+        altText,
+        contents
+      };
+    }
+
+    async function initializeLiff() {
+      try {
+        setStatus("正在初始化 LINE 分享功能", "info");
+
+        await liff.init({
+          liffId: LIFF_ID
+        });
+
+        if (!liff.isLoggedIn()) {
+          setStatus("正在前往 LINE 登入", "info");
+          liff.login();
           return;
         }
 
-        liff.shareTargetPicker([message]).then(() => {
-          alert("✅ 分享成功！");
-          // 自動清空欄位
-          document.getElementById("jsonInput").value = "";
-          document.getElementById("altTextInput").value = "";
-        }).catch((err) => {
-          alert("❌ 分享失敗：" + err);
-        });
+        if (!liff.isApiAvailable("shareTargetPicker")) {
+          throw new Error(
+            "目前瀏覽環境不支援分享功能，請改用 LINE 或其他瀏覽器開啟"
+          );
+        }
 
-      } catch (e) {
-        alert("❌ JSON 格式錯誤，請重新檢查\n\n" + e.message);
+        liffReady = true;
+        shareButton.disabled = false;
+
+        setStatus("LINE 分享功能已就緒", "success");
+      } catch (error) {
+        liffReady = false;
+        shareButton.disabled = true;
+
+        setStatus(
+          `初始化失敗：${formatError(error)}`,
+          "error"
+        );
       }
     }
+
+    async function sendFlex() {
+      if (!liffReady || isSharing) {
+        return;
+      }
+
+      const jsonText = jsonInput.value.trim();
+
+      if (!jsonText) {
+        setStatus("請先貼上 Flex JSON", "warning");
+        jsonInput.focus();
+        return;
+      }
+
+      let message;
+
+      try {
+        const parsedJson = JSON.parse(jsonText);
+
+        message = buildFlexMessage(
+          parsedJson,
+          altTextInput.value
+        );
+      } catch (error) {
+        setStatus(
+          `JSON 格式錯誤：${formatError(error)}`,
+          "error"
+        );
+        return;
+      }
+
+      setButtonLoading(true);
+      setStatus("請選擇要分享的好友或群組", "info");
+
+      try {
+        const result = await liff.shareTargetPicker(
+          [message],
+          {
+            isMultiple: true
+          }
+        );
+
+        if (result && result.status === "success") {
+          jsonInput.value = "";
+          altTextInput.value = "";
+
+          setStatus(
+            "分享成功，卡片已經送出",
+            "success"
+          );
+        } else {
+          setStatus(
+            "已取消分享，卡片沒有送出",
+            "warning"
+          );
+        }
+      } catch (error) {
+        setStatus(
+          `分享失敗：${formatError(error)}`,
+          "error"
+        );
+      } finally {
+        setButtonLoading(false);
+      }
+    }
+
+    shareButton.addEventListener("click", sendFlex);
+
+    initializeLiff();
   </script>
 </body>
 </html>
